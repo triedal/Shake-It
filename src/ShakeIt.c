@@ -47,20 +47,24 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-    if (strcmp(text_layer_get_text(text_layer), "Up!") != 0) {
-        text_layer_set_text(text_layer, "WRONG");
-    } else {
-        updateScore();
-        timer_callback();
+    if (strcmp(text_layer_get_text(text_layer), "Press SELECT to start") != 0) {
+        if (strcmp(text_layer_get_text(text_layer), "Up!") != 0) {
+            text_layer_set_text(text_layer, "WRONG");
+        } else {
+            updateScore();
+            timer_callback();
+        }
     }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-    if (strcmp(text_layer_get_text(text_layer), "Down!") != 0) {
-        text_layer_set_text(text_layer, "WRONG");
-    } else {
-        updateScore();
-        timer_callback();
+    if (strcmp(text_layer_get_text(text_layer), "Press SELECT to start") != 0) {
+        if (strcmp(text_layer_get_text(text_layer), "Down!") != 0) {
+            text_layer_set_text(text_layer, "WRONG");
+        } else {
+            updateScore();
+            timer_callback();
+        }
     }
 }
 
@@ -79,7 +83,7 @@ static void window_load(Window *window) {
     text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(text_layer));
     
-    score_layer = text_layer_create(GRect(0,110,144,30));
+    score_layer = text_layer_create(GRect(0,30,144,20));
     snprintf(buffer, sizeof(buffer), "Score: %d", score);
     text_layer_set_text(score_layer, buffer);
     text_layer_set_text_alignment(score_layer, GTextAlignmentCenter);
