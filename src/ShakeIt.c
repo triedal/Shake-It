@@ -4,12 +4,12 @@
 static Window *window;
 static TextLayer *text_layer;
 static TextLayer *score_layer;
-static AppTimer *timer;
+static AppTimer *endGameTimer;
 static unsigned int score;
 static char buffer[10];
 
 static void timer_callback() {
-    int randNum = rand() % 3 + 1;
+    int randNum = rand() % 4 + 1;
     
     switch (randNum) {
         case 1:
@@ -20,6 +20,9 @@ static void timer_callback() {
             break;
         case 3:
             text_layer_set_text(text_layer, "Down!");
+            break;
+        case 4:
+            text_layer_set_text(text_layer, "Shake!");
             break;
         default:
             break;
@@ -32,13 +35,38 @@ static void updateScore() {
     text_layer_set_text(score_layer, buffer);
 }
 
+static void endGameCallback() {
+    // Reset timer
+    app_timer_cancel(endGameTimer);
+    score = 0;
+    snprintf(buffer, sizeof(buffer), "Score: %d", score);
+    text_layer_set_text(score_layer, buffer);
+    text_layer_set_text(text_layer, "Press SELECT to start");
+}
+
+static void gameEnd() {
+    text_layer_set_text(text_layer, "WRONG");
+    endGameTimer = app_timer_register(3000, endGameCallback, NULL);
+}
+
+static void tap_handler(AccelAxisType axis, int32_t direction) {
+    if (strcmp(text_layer_get_text(text_layer), "Press SELECT to start") != 0) {
+        if (strcmp(text_layer_get_text(text_layer), "Shake!") != 0) {
+            gameEnd();
+        } else {
+            updateScore();
+            timer_callback();
+        }
+    }
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (strcmp(text_layer_get_text(text_layer), "Press SELECT to start") == 0) {
         score = 0;
         timer_callback();
     } else {
         if (strcmp(text_layer_get_text(text_layer), "Select!") != 0) {
-            text_layer_set_text(text_layer, "WRONG");
+            gameEnd();
         } else {
             updateScore();
             timer_callback();
@@ -49,7 +77,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (strcmp(text_layer_get_text(text_layer), "Press SELECT to start") != 0) {
         if (strcmp(text_layer_get_text(text_layer), "Up!") != 0) {
-            text_layer_set_text(text_layer, "WRONG");
+            gameEnd();
         } else {
             updateScore();
             timer_callback();
@@ -99,18 +127,24 @@ static void window_unload(Window *window) {
 }
 
 static void init(void) {
-  window = window_create();
-  window_set_click_config_provider(window, click_config_provider);
-  window_set_window_handlers(window, (WindowHandlers) {
-    .load = window_load,
-    .unload = window_unload,
-  });
-  const bool animated = true;
-  window_stack_push(window, animated);
+    window = window_create();
+    window_set_click_config_provider(window, click_config_provider);
+    window_set_window_handlers(window, (WindowHandlers) {
+        .load = window_load,
+        .unload = window_unload,
+    });
+    const bool animated = true;
+    window_stack_push(window, animated);
+    
+    // Subscribe to tap service
+    accel_tap_service_subscribe(tap_handler);
 }
 
 static void deinit(void) {
-  window_destroy(window);
+    window_destroy(window);
+    
+    // Unsubscribe from tap service
+    accel_tap_service_unsubscribe();
 }
 
 int main(void) {
